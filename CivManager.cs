@@ -26,8 +26,17 @@ namespace CivSim
             {
                 Civs = JsonSerializer.Deserialize<Dictionary<string, Civ>>(CivData);
             }
-            catch {
+            catch
+            {
                 Console.WriteLine("Could not load save data");
+            }
+        }
+
+        public static void UpdateCivs()
+        {
+            foreach (Civ c in Civs.Values)
+            {
+                c.Update();
             }
         }
     }
