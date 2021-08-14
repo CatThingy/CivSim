@@ -28,16 +28,24 @@ namespace CivSim
             return CivManager.Civs.ContainsKey(userHash);
         }
 
-        // Levels 0-24: costs 1 point
-        // Levels 25-49: costs 2 points
-        // Levels 50-74: costs 3 points
+        // Levels 0-25: costs 1 point
+        // Levels 26-50: costs 2 points
+        // Levels 51-75: costs 3 points
         // etc.
         int computePointDifference(int from, int to)
         {
-            int l1 = (int)Math.Floor(Math.Abs(from) / 25d);
-            int l2 = (int)Math.Floor(Math.Abs(to) / 25d);
+            int l1 = Math.Abs(from) / 25;
+            int l2 = Math.Abs(to) / 25;
 
             return Math.Sign(to) * (((l2 * (l2 + 1)) / 2) * 25 + (Math.Abs(to) % 25) * (l2 + 1)) - Math.Sign(from) * (((l1 * (l1 + 1)) / 2) * 25 + (Math.Abs(from) % 25) * (l1 + 1));
+        }
+
+        // Inverse function of above. See https://www.desmos.com/calculator/h4wsckmdoa
+        public int maxPointDifference(int from, int points)
+        {
+            int k1 = (int)Math.Ceiling((-5 + Math.Sqrt(26 + 8 * Math.Abs(from + points))) / 10d);
+            int k2 = (int)Math.Ceiling((-5 + Math.Sqrt(26 + 8 * Math.Abs(from))) / 10d);
+            return (int)(Math.Sign(points) * ((((Math.Abs(from + points)) / k1) + 12.5 * (k1 - 1)) - Math.Abs(from) / k2 + 12.5 * (k2 - 1)));
         }
 
         [Command("create"), Aliases("register")]
@@ -98,6 +106,11 @@ namespace CivSim
                             userCiv.Offence += p;
                             userCiv.Points -= p;
                         }
+                        else
+                        {
+                            await context.RespondAsync($"You only have enough points to increase your offence by {maxPointDifference(userCiv.Offence, userCiv.Points)} level(s).");
+                        }
+
                     }
                     else
                     {
@@ -106,6 +119,10 @@ namespace CivSim
                             userCiv.Offence += p;
                             userCiv.Respec += p;
                             userCiv.Points -= p;
+                        }
+                        else
+                        {
+                            await context.RespondAsync($"You only have enough point respecs to decrease your offence by {-maxPointDifference(userCiv.Offence, -userCiv.Respec)} level(s).");
                         }
                     }
                     break;
@@ -120,6 +137,10 @@ namespace CivSim
                             userCiv.Defence += p;
                             userCiv.Points -= p;
                         }
+                        else
+                        {
+                            await context.RespondAsync($"You only have enough points to increase your defence by {maxPointDifference(userCiv.Defence, userCiv.Points)} level(s).");
+                        }
                     }
                     else
                     {
@@ -129,8 +150,13 @@ namespace CivSim
                             userCiv.Respec += p;
                             userCiv.Points -= p;
                         }
+                        else
+                        {
+                            await context.RespondAsync($"You only have enough point respecs to decrease your defence by {maxPointDifference(userCiv.Defence, userCiv.Points)} level(s).");
+                        }
                     }
                     break;
+
                 case "research":
                     p = computePointDifference(userCiv.Research, userCiv.Research + change);
                     if (change > 0)
@@ -140,6 +166,10 @@ namespace CivSim
                             userCiv.Research += p;
                             userCiv.Points -= p;
                         }
+                        else
+                        {
+                            await context.RespondAsync($"You only have enough points to increase your research by {maxPointDifference(userCiv.Research, userCiv.Points)} level(s).");
+                        }
                     }
                     else
                     {
@@ -149,8 +179,13 @@ namespace CivSim
                             userCiv.Respec += p;
                             userCiv.Points -= p;
                         }
+                        else
+                        {
+                            await context.RespondAsync($"You only have enough point respecs to decrease your research by {maxPointDifference(userCiv.Research, userCiv.Points)} level(s).");
+                        }
                     }
                     break;
+
                 case "education":
                     p = computePointDifference(userCiv.Education, userCiv.Education + change);
                     if (change > 0)
@@ -160,6 +195,10 @@ namespace CivSim
                             userCiv.Education += p;
                             userCiv.Points += p;
                         }
+                        else
+                        {
+                            await context.RespondAsync($"You only have enough points to increase your education by {maxPointDifference(userCiv.Education, userCiv.Points)} level(s).");
+                        }
                     }
                     else
                     {
@@ -169,8 +208,13 @@ namespace CivSim
                             userCiv.Respec += p;
                             userCiv.Points -= p;
                         }
+                        else
+                        {
+                            await context.RespondAsync($"You only have enough point respecs to decrease your education by {maxPointDifference(userCiv.Education, userCiv.Points)} level(s).");
+                        }
                     }
                     break;
+
                 case "healthcare":
                     p = computePointDifference(userCiv.Healthcare, userCiv.Healthcare + change);
                     if (change > 0)
@@ -179,6 +223,10 @@ namespace CivSim
                         {
                             userCiv.Healthcare += p;
                             userCiv.Points -= p;
+                        }
+                        else
+                        {
+                            await context.RespondAsync($"You only have enough points to increase your healthcare by {maxPointDifference(userCiv.Healthcare, userCiv.Points)} level(s).");
                         }
                     }
                     else
@@ -189,12 +237,18 @@ namespace CivSim
                             userCiv.Respec += p;
                             userCiv.Points -= p;
                         }
+                        else
+                        {
+                            await context.RespondAsync($"You only have enough point respecs to decrease your healthcare by {maxPointDifference(userCiv.Healthcare, userCiv.Points)} level(s).");
+                        }
                     }
                     break;
+
                 default:
-                    await context.RespondAsync("That's not a recognized stat.");
+                    await context.RespondAsync("That's not a valid stat.");
                     return;
             }
+            await CivManager.SaveCivs();
         }
 
         [Command("stats")]
