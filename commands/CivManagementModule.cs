@@ -57,7 +57,7 @@ namespace CivSim
                 await context.RespondAsync("You've already registered.");
                 return;
             }
-            Civ newCiv = new Civ(name);
+            Civ newCiv = new Civ(name, userHash);
             CivManager.Civs.Add(userHash, newCiv);
 
             await CivManager.SaveCivs();
@@ -76,7 +76,7 @@ namespace CivSim
             await context.RespondAsync("You must specify a name for your nation.");
         }
 
-        [Command("stats")]
+        [Command("allocate")]
         public async Task ChangeStats(CommandContext context, string stat, int change)
         {
             string userHash = GetUserHash(((context.Member as SnowflakeObject ?? context.Guild as SnowflakeObject).Id));
@@ -249,10 +249,11 @@ namespace CivSim
                     return;
             }
             await CivManager.SaveCivs();
+            await ShowStats(context);
         }
 
-        [Command("stats")]
-        public async Task ChangeStats(CommandContext context)
+        [Command("stats"), Aliases("show")]
+        public async Task ShowStats(CommandContext context)
         {
             string userHash = GetUserHash(((context.Member as SnowflakeObject ?? context.Guild as SnowflakeObject).Id));
             if (!UserExists(userHash))
@@ -263,7 +264,7 @@ namespace CivSim
 
             Civ userCiv = CivManager.Civs[userHash];
 
-            await context.RespondAsync($"O:{userCiv.Offence}\nD:{userCiv.Defence}\nR:{userCiv.Research}\nE:{userCiv.Education}\nH:{userCiv.Healthcare}");
+            await context.RespondAsync(userCiv.Format());
         }
     }
 }
