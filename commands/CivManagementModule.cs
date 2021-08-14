@@ -39,7 +39,8 @@ namespace CivSim
             }
             Civ newCiv = new Civ(name);
             CivManager.Civs.Add(userHash, newCiv);
-
+            
+            await CivManager.SaveCivs();
             await context.RespondAsync($"{name} has been registered as a nation with an ID of {userHash}");
         }
 

@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -25,6 +24,8 @@ namespace CivSim
         {
             string configString = File.ReadAllText("config.json");
             Config config = JsonSerializer.Deserialize<Config>(configString);
+
+            await CivManager.LoadCivs();
 
             DiscordClient Discord = new DiscordClient(new DiscordConfiguration()
             {
