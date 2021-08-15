@@ -54,7 +54,7 @@ namespace CivSim
 
         //TODO: Replace this whole thing with a slash command so that other people can't make the mistake of interacting with it
         [Command("create"), Aliases("register")]
-        public async Task CreateCiv(CommandContext context, string name)
+        public async Task CreateCiv(CommandContext context, params string[] name)
         {
             string userHash = GetUserHash(((context.Member as SnowflakeObject ?? context.Guild as SnowflakeObject).Id));
             if (UserExists(userHash))
@@ -62,7 +62,7 @@ namespace CivSim
                 await context.RespondAsync("You've already registered.");
                 return;
             }
-            Civ newCiv = new Civ(name, userHash);
+            Civ newCiv = new Civ(String.Join(" ", name), userHash);
 
             Dictionary<string, DiscordSelectComponentOption> stats = new Dictionary<string, DiscordSelectComponentOption>()
             {
@@ -130,15 +130,13 @@ namespace CivSim
 
                 amt /= 2;
 
-                Console.WriteLine(i);
-
                 if (i == 2)
                 {
                     CivManager.Instance.Civs.Add(userHash, newCiv);
 
                     await CivManager.Instance.Save();
                     await result.Result.Interaction.CreateResponseAsync(DSharpPlus.InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder()
-                    .WithContent($"{name} has been registered as a nation with id ${userHash}"));
+                    .WithContent($"{String.Join(" ", name)} has been registered as a nation with id ${userHash}"));
                     break;
                 }
                 await result.Result.Interaction.CreateResponseAsync(DSharpPlus.InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder()
