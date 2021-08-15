@@ -31,7 +31,7 @@ namespace CivSim
 
             await CivManager.Instance.Load();
 
-            DiscordClient Discord = new DiscordClient(new DiscordConfiguration()
+            var Discord = new DiscordClient(new DiscordConfiguration()
             {
                 Token = config.Token,
                 TokenType = TokenType.Bot,

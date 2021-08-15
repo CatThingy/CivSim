@@ -1,9 +1,11 @@
 using System;
 using System.IO;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 
 
 namespace CivSim
@@ -66,6 +68,22 @@ namespace CivSim
 
                 NextUpdate = NextUpdate.AddDays(7);
             }
+        }
+        public static string GetUserHash(ulong id)
+        {
+            HashAlgorithm algorithm = SHA1.Create();
+            byte[] rawHash = algorithm.ComputeHash(BitConverter.GetBytes(id));
+            var sb = new StringBuilder();
+            foreach (byte b in rawHash)
+            {
+                sb.Append(b.ToString("x2"));
+            }
+            return sb.ToString()[^8..];
+        }
+
+        public bool UserExists(string userHash)
+        {
+            return CivManager.Instance.Civs.ContainsKey(userHash);
         }
     }
 }

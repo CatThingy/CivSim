@@ -2,7 +2,6 @@ using System;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
@@ -15,23 +14,6 @@ namespace CivSim
 {
     public class CivManagementModule : BaseCommandModule
     {
-        string GetUserHash(ulong id)
-        {
-            HashAlgorithm algorithm = SHA1.Create();
-            byte[] rawHash = algorithm.ComputeHash(BitConverter.GetBytes(id));
-            StringBuilder sb = new StringBuilder();
-            foreach (byte b in rawHash)
-            {
-                sb.Append(b.ToString("x2"));
-            }
-            return sb.ToString()[^8..];
-        }
-
-        bool UserExists(string userHash)
-        {
-            return CivManager.Instance.Civs.ContainsKey(userHash);
-        }
-
         // Levels 0-25: costs 1 point
         // Levels 26-50: costs 2 points
         // Levels 51-75: costs 3 points
@@ -54,11 +36,11 @@ namespace CivSim
 
         List<DiscordSelectComponentOption> updateNumbers(List<DiscordSelectComponentOption> options, int num)
         {
-            List<DiscordSelectComponentOption> temp = new List<DiscordSelectComponentOption>();
+            var temp = new List<DiscordSelectComponentOption>();
             // Update the numbers
             foreach (DiscordSelectComponentOption option in options)
             {
-                DiscordSelectComponentOption newOption = new DiscordSelectComponentOption((num > 0 ? "+" : "") + $"{num} to {option.Value}", option.Value);
+                var newOption = new DiscordSelectComponentOption((num > 0 ? "+" : "") + $"{num} to {option.Value}", option.Value);
                 temp.Add(newOption);
             }
             return temp;
@@ -68,8 +50,8 @@ namespace CivSim
         [Command("create"), Aliases("register")]
         public async Task CreateCiv(CommandContext context, params string[] name)
         {
-            string userHash = GetUserHash(((context.Member as SnowflakeObject ?? context.Guild as SnowflakeObject).Id));
-            if (UserExists(userHash))
+            string userHash = CivManager.GetUserHash(((context.Member as SnowflakeObject ?? context.Guild as SnowflakeObject).Id));
+            if (CivManager.Instance.UserExists(userHash))
             {
                 await context.RespondAsync("You've already registered.");
                 return;
@@ -77,7 +59,7 @@ namespace CivSim
             Civ newCiv = new Civ(String.Join(" ", name), userHash);
 
             // Set this up to remove options more easily
-            Dictionary<string, DiscordSelectComponentOption> stats = new Dictionary<string, DiscordSelectComponentOption>()
+            var stats = new Dictionary<string, DiscordSelectComponentOption>()
             {
                 {"offence", new DiscordSelectComponentOption("Offence", "offence")},
                 {"defence", new DiscordSelectComponentOption("Defence", "defence")},
@@ -88,7 +70,7 @@ namespace CivSim
                 {"morale", new DiscordSelectComponentOption("Morale", "morale")},
             };
 
-            List<DiscordSelectComponentOption> options = new List<DiscordSelectComponentOption>()
+            var options = new List<DiscordSelectComponentOption>()
             {
                 stats["offence"],
                 stats["defence"],
@@ -108,13 +90,13 @@ namespace CivSim
                 stats[option.Value] = option;
             }
 
-            DiscordMessageBuilder statMessage = new DiscordMessageBuilder()
+            var statMessage = new DiscordMessageBuilder()
             .WithContent($"Customize your nation:")
             .AddComponents(new DiscordSelectComponent("stat", "Select...", options));
 
             DiscordMessage msg = await context.RespondAsync(statMessage);
 
-            InteractivityResult<ComponentInteractionCreateEventArgs> result = new InteractivityResult<ComponentInteractionCreateEventArgs>();
+            var result = new InteractivityResult<ComponentInteractionCreateEventArgs>();
 
 
             // +16/+8/+4 initial stats
@@ -261,8 +243,8 @@ namespace CivSim
         [Command("create")]
         public async Task CreateCiv(CommandContext context)
         {
-            string userHash = GetUserHash(((context.Member as SnowflakeObject ?? context.Guild as SnowflakeObject).Id));
-            if (UserExists(userHash))
+            string userHash = CivManager.GetUserHash(((context.Member as SnowflakeObject ?? context.Guild as SnowflakeObject).Id));
+            if (CivManager.Instance.UserExists(userHash))
             {
                 await context.RespondAsync("You've already registered.");
                 return;
@@ -275,8 +257,8 @@ namespace CivSim
         {
             CivManager.Instance.CheckForUpdates();
 
-            string userHash = GetUserHash(((context.Member as SnowflakeObject ?? context.Guild as SnowflakeObject).Id));
-            if (!UserExists(userHash))
+            string userHash = CivManager.GetUserHash(((context.Member as SnowflakeObject ?? context.Guild as SnowflakeObject).Id));
+            if (!CivManager.Instance.UserExists(userHash))
             {
                 await context.RespondAsync("You haven't registered yet.");
                 return;
@@ -453,8 +435,8 @@ namespace CivSim
         {
             CivManager.Instance.CheckForUpdates();
 
-            string userHash = GetUserHash(((context.Member as SnowflakeObject ?? context.Guild as SnowflakeObject).Id));
-            if (!UserExists(userHash))
+            string userHash = CivManager.GetUserHash(((context.Member as SnowflakeObject ?? context.Guild as SnowflakeObject).Id));
+            if (!CivManager.Instance.UserExists(userHash))
             {
                 await context.RespondAsync("You haven't registered yet.");
                 return;
