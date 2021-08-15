@@ -25,7 +25,7 @@ namespace CivSim
 
         bool UserExists(string userHash)
         {
-            return CivManager.Civs.ContainsKey(userHash);
+            return CivManager.Instance.Civs.ContainsKey(userHash);
         }
 
         // Levels 0-25: costs 1 point
@@ -58,9 +58,9 @@ namespace CivSim
                 return;
             }
             Civ newCiv = new Civ(name, userHash);
-            CivManager.Civs.Add(userHash, newCiv);
+            CivManager.Instance.Civs.Add(userHash, newCiv);
 
-            await CivManager.SaveCivs();
+            await CivManager.Save();
             await context.RespondAsync($"{name} has been registered as a nation with an ID of {userHash}");
         }
 
@@ -86,7 +86,7 @@ namespace CivSim
                 return;
             }
 
-            Civ userCiv = CivManager.Civs[userHash];
+            Civ userCiv = CivManager.Instance.Civs[userHash];
             if (change == 0)
             {
                 await context.RespondAsync("Congrats, you changed a stat by 0.");
@@ -248,7 +248,7 @@ namespace CivSim
                     await context.RespondAsync("That's not a valid stat.");
                     return;
             }
-            await CivManager.SaveCivs();
+            await CivManager.Save();
             await ShowStats(context);
         }
 
@@ -262,7 +262,7 @@ namespace CivSim
                 return;
             }
 
-            Civ userCiv = CivManager.Civs[userHash];
+            Civ userCiv = CivManager.Instance.Civs[userHash];
 
             await context.RespondAsync(userCiv.Format());
         }

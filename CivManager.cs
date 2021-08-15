@@ -1,38 +1,49 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
 
 namespace CivSim
 {
-    public static class CivManager
+    public class CivManager
     {
-        public static Dictionary<string, Civ> Civs = new Dictionary<string, Civ>();
-
-        public static async Task SaveCivs()
+        public static CivManager Instance;
+        public CivManager()
         {
-            string CivData = JsonSerializer.Serialize(Civs);
-
-            await File.WriteAllTextAsync("data/civs.json", CivData);
+            DateTime now = DateTime.Today.AddHours(7);
+            int daysToUpdate = (7 - (int)now.DayOfWeek) % 7;
+            NextUpdate = now.AddDays(daysToUpdate > 0 ? daysToUpdate : 7);
         }
 
-        public static async Task LoadCivs()
-        {
-            string CivData = await File.ReadAllTextAsync("data/civs.json");
+        [JsonInclude]
+        public Dictionary<string, Civ> Civs = new Dictionary<string, Civ>();
 
-            try
+        public DateTime NextUpdate { get; set; }
+
+        public static async Task Save()
+        {
+            string saveData = JsonSerializer.Serialize(Instance);
+
+            await File.WriteAllTextAsync("data/save.json", saveData);
+        }
+
+        public static async Task Load()
+        {
+            if (File.Exists("data/save.json"))
             {
-                Civs = JsonSerializer.Deserialize<Dictionary<string, Civ>>(CivData);
+                string saveData = await File.ReadAllTextAsync("data/save.json");
+                Instance = JsonSerializer.Deserialize<CivManager>(saveData);
             }
-            catch
+            else
             {
-                Console.WriteLine("Could not load save data");
+                Instance = new CivManager();
             }
         }
 
-        public static void UpdateCivs()
+        public void UpdateCivs()
         {
             foreach (Civ c in Civs.Values)
             {
