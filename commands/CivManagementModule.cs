@@ -45,11 +45,23 @@ namespace CivSim
         }
 
         // Inverse function of above. See https://www.desmos.com/calculator/h4wsckmdoa
-        public int maxPointDifference(int from, int points)
+        int maxPointDifference(int from, int points)
         {
             int k1 = (int)Math.Ceiling((-5 + Math.Sqrt(26 + 8 * Math.Abs(from + points))) / 10d);
             int k2 = (int)Math.Ceiling((-5 + Math.Sqrt(26 + 8 * Math.Abs(from))) / 10d);
             return (int)(Math.Sign(points) * ((((Math.Abs(from + points)) / k1) + 12.5 * (k1 - 1)) - Math.Abs(from) / k2 + 12.5 * (k2 - 1)));
+        }
+
+        List<DiscordSelectComponentOption> updateNumbers(List<DiscordSelectComponentOption> options, int num)
+        {
+            List<DiscordSelectComponentOption> temp = new List<DiscordSelectComponentOption>();
+            // Update the numbers
+            foreach (DiscordSelectComponentOption option in options)
+            {
+                DiscordSelectComponentOption newOption = new DiscordSelectComponentOption((num > 0 ? "+" : "") + $"{num} to {option.Value}", option.Value);
+                temp.Add(newOption);
+            }
+            return temp;
         }
 
         //TODO: Replace this whole thing with a slash command so that other people can't make the mistake of interacting with it
@@ -64,6 +76,7 @@ namespace CivSim
             }
             Civ newCiv = new Civ(String.Join(" ", name), userHash);
 
+            // Set this up to remove options more easily
             Dictionary<string, DiscordSelectComponentOption> stats = new Dictionary<string, DiscordSelectComponentOption>()
             {
                 {"offence", new DiscordSelectComponentOption("Offence", "offence")},
@@ -71,6 +84,8 @@ namespace CivSim
                 {"research", new DiscordSelectComponentOption("Research", "research")},
                 {"education", new DiscordSelectComponentOption("Education", "education")},
                 {"healthcare", new DiscordSelectComponentOption("Healthcare", "healthcare")},
+                {"civilian", new DiscordSelectComponentOption("Civilian", "civilian")},
+                {"morale", new DiscordSelectComponentOption("Morale", "morale")},
             };
 
             List<DiscordSelectComponentOption> options = new List<DiscordSelectComponentOption>()
@@ -79,19 +94,30 @@ namespace CivSim
                 stats["defence"],
                 stats["research"],
                 stats["education"],
-                stats["healthcare"]
+                stats["healthcare"],
+                stats["civilian"],
+                stats["morale"]
             };
 
+            int amt = 16;
+
+            // Update the numbers
+            options = updateNumbers(options, amt);
+            foreach (DiscordSelectComponentOption option in options)
+            {
+                stats[option.Value] = option;
+            }
+
             DiscordMessageBuilder statMessage = new DiscordMessageBuilder()
-            .WithContent($"Choose your main stats:")
+            .WithContent($"Customize your nation:")
             .AddComponents(new DiscordSelectComponent("stat", "Select...", options));
 
             DiscordMessage msg = await context.RespondAsync(statMessage);
 
             InteractivityResult<ComponentInteractionCreateEventArgs> result = new InteractivityResult<ComponentInteractionCreateEventArgs>();
 
-            int amt = 16;
 
+            // +16/+8/+4 initial stats
             for (int i = 0; i < 3; i++)
             {
                 result = await msg.WaitForSelectAsync(context.User, "stat", null);
@@ -124,9 +150,96 @@ namespace CivSim
                     case "healthcare":
                         newCiv.Healthcare = amt;
                         break;
+                    case "civilian":
+                        newCiv.Civilian = amt;
+                        break;
+                    case "morale":
+                        newCiv.Morale = amt;
+                        break;
                 }
 
                 amt /= 2;
+
+                // Update the numbers
+                options = updateNumbers(options, amt);
+                foreach (DiscordSelectComponentOption option in options)
+                {
+                    stats[option.Value] = option;
+                }
+
+
+                // Final iteration
+                if (i == 2)
+                {
+                    break;
+                }
+                await result.Result.Interaction.CreateResponseAsync(DSharpPlus.InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder()
+                .WithContent("Customize your nation:")
+                .AddComponents(new DiscordSelectComponent("stat", "Select...", options)));
+            }
+
+            amt = -16;
+
+            // Update the numbers
+            options = updateNumbers(options, amt);
+            foreach (DiscordSelectComponentOption option in options)
+            {
+                stats[option.Value] = option;
+            }
+
+            await result.Result.Interaction.CreateResponseAsync(DSharpPlus.InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder()
+            .WithContent("Customize your nation:")
+            .AddComponents(new DiscordSelectComponent("stat", "Select...", options)));
+
+            // -16/-8/-4 initial stats
+            for (int i = 0; i < 3; i++)
+            {
+                result = await msg.WaitForSelectAsync(context.User, "stat", null);
+
+                if (result.TimedOut)
+                {
+                    await msg.DeleteAsync();
+                    return;
+                }
+                options.Remove(stats[result.Result.Values[0]]);
+
+                switch (result.Result.Values[0])
+                {
+                    case "offence":
+                        newCiv.Offence = amt;
+                        break;
+
+                    case "defence":
+                        newCiv.Defence = amt;
+                        break;
+
+                    case "research":
+                        newCiv.Research = amt;
+                        break;
+
+                    case "education":
+                        newCiv.Education = amt;
+                        break;
+
+                    case "healthcare":
+                        newCiv.Healthcare = amt;
+                        break;
+                    case "civilian":
+                        newCiv.Civilian = amt;
+                        break;
+                    case "morale":
+                        newCiv.Morale = amt;
+                        break;
+                }
+
+                amt /= 2;
+
+                // Update the numbers
+                options = updateNumbers(options, amt);
+                foreach (DiscordSelectComponentOption option in options)
+                {
+                    stats[option.Value] = option;
+                }
 
                 // Final iteration, save everything
                 if (i == 2)
@@ -135,11 +248,12 @@ namespace CivSim
 
                     await CivManager.Instance.Save();
                     await result.Result.Interaction.CreateResponseAsync(DSharpPlus.InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder()
-                    .WithContent($"{String.Join(" ", name)} has been registered as a nation with id {userHash}"));
+                    .WithContent("")
+                    .AddEmbed(newCiv.Format()));
                     break;
                 }
                 await result.Result.Interaction.CreateResponseAsync(DSharpPlus.InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder()
-                .WithContent("Choose your main stats:")
+                .WithContent("Customize your nation:")
                 .AddComponents(new DiscordSelectComponent("stat", "Select...", options)));
             }
         }
