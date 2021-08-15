@@ -1,5 +1,3 @@
-using DSharpPlus;
-using DSharpPlus.Entities;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Entities;
 using DSharpPlus.CommandsNext.Converters;
