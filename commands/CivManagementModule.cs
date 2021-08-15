@@ -94,13 +94,11 @@ namespace CivSim
 
             for (int i = 0; i < 3; i++)
             {
-
-                result = await msg.WaitForSelectAsync(context.User, "stat", TimeSpan.FromSeconds(60));
+                result = await msg.WaitForSelectAsync(context.User, "stat", null);
 
                 if (result.TimedOut)
                 {
-                    await result.Result.Interaction.CreateResponseAsync(DSharpPlus.InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder()
-                    .WithContent("~~Choose your main stats:~~"));
+                    await msg.DeleteAsync();
                     return;
                 }
                 options.Remove(stats[result.Result.Values[0]]);
@@ -130,13 +128,14 @@ namespace CivSim
 
                 amt /= 2;
 
+                // Final iteration, save everything
                 if (i == 2)
                 {
                     CivManager.Instance.Civs.Add(userHash, newCiv);
 
                     await CivManager.Instance.Save();
                     await result.Result.Interaction.CreateResponseAsync(DSharpPlus.InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder()
-                    .WithContent($"{String.Join(" ", name)} has been registered as a nation with id ${userHash}"));
+                    .WithContent($"{String.Join(" ", name)} has been registered as a nation with id {userHash}"));
                     break;
                 }
                 await result.Result.Interaction.CreateResponseAsync(DSharpPlus.InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder()
