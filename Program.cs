@@ -1,9 +1,13 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 
+
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
+using DSharpPlus.Interactivity;
+using DSharpPlus.Interactivity.Extensions;
 
 namespace CivSim
 {
@@ -42,6 +46,11 @@ namespace CivSim
             });
 
             commands.RegisterCommands<CivManagementModule>();
+
+            Discord.UseInteractivity(new InteractivityConfiguration
+            {
+                Timeout = TimeSpan.FromSeconds(60)
+            });
 
             await Discord.ConnectAsync();
             await Task.Delay(-1);

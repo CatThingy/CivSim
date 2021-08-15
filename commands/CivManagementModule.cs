@@ -1,11 +1,15 @@
 using System;
 using System.Text;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using System.Security.Cryptography;
 
 using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using DSharpPlus.Interactivity;
+using DSharpPlus.Interactivity.Extensions;
 
 namespace CivSim
 {
@@ -48,6 +52,7 @@ namespace CivSim
             return (int)(Math.Sign(points) * ((((Math.Abs(from + points)) / k1) + 12.5 * (k1 - 1)) - Math.Abs(from) / k2 + 12.5 * (k2 - 1)));
         }
 
+        //TODO: Replace this whole thing with a slash command so that other people can't make the mistake of interacting with it
         [Command("create"), Aliases("register")]
         public async Task CreateCiv(CommandContext context, string name)
         {
@@ -58,10 +63,88 @@ namespace CivSim
                 return;
             }
             Civ newCiv = new Civ(name, userHash);
-            CivManager.Instance.Civs.Add(userHash, newCiv);
 
-            await CivManager.Instance.Save();
-            await context.RespondAsync($"{name} has been registered as a nation with an ID of {userHash}");
+            Dictionary<string, DiscordSelectComponentOption> stats = new Dictionary<string, DiscordSelectComponentOption>()
+            {
+                {"offence", new DiscordSelectComponentOption("Offence", "offence")},
+                {"defence", new DiscordSelectComponentOption("Defence", "defence")},
+                {"research", new DiscordSelectComponentOption("Research", "research")},
+                {"education", new DiscordSelectComponentOption("Education", "education")},
+                {"healthcare", new DiscordSelectComponentOption("Healthcare", "healthcare")},
+            };
+
+            List<DiscordSelectComponentOption> options = new List<DiscordSelectComponentOption>()
+            {
+                stats["offence"],
+                stats["defence"],
+                stats["research"],
+                stats["education"],
+                stats["healthcare"]
+            };
+
+            DiscordMessageBuilder statMessage = new DiscordMessageBuilder()
+            .WithContent($"Choose your main stats:")
+            .AddComponents(new DiscordSelectComponent("stat", "Select...", options));
+
+            DiscordMessage msg = await context.RespondAsync(statMessage);
+
+            InteractivityResult<ComponentInteractionCreateEventArgs> result = new InteractivityResult<ComponentInteractionCreateEventArgs>();
+
+            int amt = 16;
+
+            for (int i = 0; i < 3; i++)
+            {
+
+                result = await msg.WaitForSelectAsync(context.User, "stat", TimeSpan.FromSeconds(60));
+
+                if (result.TimedOut)
+                {
+                    await result.Result.Interaction.CreateResponseAsync(DSharpPlus.InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder()
+                    .WithContent("~~Choose your main stats:~~"));
+                    return;
+                }
+                options.Remove(stats[result.Result.Values[0]]);
+
+                switch (result.Result.Values[0])
+                {
+                    case "offence":
+                        newCiv.Offence = amt;
+                        break;
+
+                    case "defence":
+                        newCiv.Defence = amt;
+                        break;
+
+                    case "research":
+                        newCiv.Research = amt;
+                        break;
+
+                    case "education":
+                        newCiv.Education = amt;
+                        break;
+
+                    case "healthcare":
+                        newCiv.Healthcare = amt;
+                        break;
+                }
+
+                amt /= 2;
+
+                Console.WriteLine(i);
+
+                if (i == 2)
+                {
+                    CivManager.Instance.Civs.Add(userHash, newCiv);
+
+                    await CivManager.Instance.Save();
+                    await result.Result.Interaction.CreateResponseAsync(DSharpPlus.InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder()
+                    .WithContent($"{name} has been registered as a nation with id ${userHash}"));
+                    break;
+                }
+                await result.Result.Interaction.CreateResponseAsync(DSharpPlus.InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder()
+                .WithContent("Choose your main stats:")
+                .AddComponents(new DiscordSelectComponent("stat", "Select...", options)));
+            }
         }
 
         [Command("create")]
