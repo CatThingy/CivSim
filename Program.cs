@@ -46,6 +46,7 @@ namespace CivSim
             });
 
             commands.RegisterCommands<CivManagementModule>();
+            commands.SetHelpFormatter<HelpFormatter>();
 
             Discord.UseInteractivity(new InteractivityConfiguration
             {

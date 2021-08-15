@@ -47,13 +47,21 @@ namespace CivSim
         }
 
         //TODO: Replace this whole thing with a slash command so that other people can't make the mistake of interacting with it
-        [Command("create"), Aliases("register")]
-        public async Task CreateCiv(CommandContext context, params string[] name)
+        [Command("create")]
+        [Aliases("register")]
+        [Description("Creates your nation, allowing you to use the rest of the bot.")]
+        public async Task CreateCiv(CommandContext context, [Description("The name of your nation.")] params string[] name)
         {
             string userHash = CivManager.GetUserHash(((context.Member as SnowflakeObject ?? context.Guild as SnowflakeObject).Id));
             if (CivManager.Instance.UserExists(userHash))
             {
                 await context.RespondAsync("You've already registered.");
+                return;
+            }
+            string joinedName = String.Join(" ", name);
+            if (joinedName == "")
+            {
+                await context.RespondAsync("You must specify a name for your nation.");
                 return;
             }
             Civ newCiv = new Civ(String.Join(" ", name), userHash);
@@ -240,20 +248,14 @@ namespace CivSim
             }
         }
 
-        [Command("create")]
-        public async Task CreateCiv(CommandContext context)
-        {
-            string userHash = CivManager.GetUserHash(((context.Member as SnowflakeObject ?? context.Guild as SnowflakeObject).Id));
-            if (CivManager.Instance.UserExists(userHash))
-            {
-                await context.RespondAsync("You've already registered.");
-                return;
-            }
-            await context.RespondAsync("You must specify a name for your nation.");
-        }
-
         [Command("allocate")]
-        public async Task ChangeStats(CommandContext context, string stat, int change)
+        [Description("Allocates points to increase your stats.\n\nStats cost 1 point more every 25 levels.")]
+        public async Task ChangeStats(CommandContext context,
+            [Description("The stat to allocate points to.")]
+            string stat,
+
+            [Description("The number of levels to change the stat by.\nIf negative, uses point respecs and refunds points.")]
+            int change)
         {
             CivManager.Instance.CheckForUpdates();
 
@@ -430,19 +432,35 @@ namespace CivSim
             await ShowStats(context);
         }
 
-        [Command("stats"), Aliases("show")]
-        public async Task ShowStats(CommandContext context)
+        [Command("stats")]
+        [Aliases("show")]
+        [Description("Shows stats of a nation.")]
+        public async Task ShowStats(CommandContext context,
+            [Description("The ID of the nation to show.\nIf no ID is specified, shows stats of your nation.")]
+            string id = "")
         {
             CivManager.Instance.CheckForUpdates();
 
             string userHash = CivManager.GetUserHash(((context.Member as SnowflakeObject ?? context.Guild as SnowflakeObject).Id));
-            if (!CivManager.Instance.UserExists(userHash))
+            if (id == "")
             {
-                await context.RespondAsync("You haven't registered yet.");
+                id = userHash;
+            }
+
+            if (!CivManager.Instance.UserExists(id))
+            {
+                if (id == userHash)
+                {
+                    await context.RespondAsync("You haven't registered yet.");
+                }
+                else
+                {
+                    await context.RespondAsync("That nation doesn't exist.");
+                }
                 return;
             }
 
-            Civ userCiv = CivManager.Instance.Civs[userHash];
+            Civ userCiv = CivManager.Instance.Civs[id];
 
             await context.RespondAsync(userCiv.Format());
         }
