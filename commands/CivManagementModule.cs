@@ -60,7 +60,7 @@ namespace CivSim
             Civ newCiv = new Civ(name, userHash);
             CivManager.Instance.Civs.Add(userHash, newCiv);
 
-            await CivManager.Save();
+            await CivManager.Instance.Save();
             await context.RespondAsync($"{name} has been registered as a nation with an ID of {userHash}");
         }
 
@@ -79,6 +79,8 @@ namespace CivSim
         [Command("allocate")]
         public async Task ChangeStats(CommandContext context, string stat, int change)
         {
+            CivManager.Instance.CheckForUpdates();
+
             string userHash = GetUserHash(((context.Member as SnowflakeObject ?? context.Guild as SnowflakeObject).Id));
             if (!UserExists(userHash))
             {
@@ -248,13 +250,15 @@ namespace CivSim
                     await context.RespondAsync("That's not a valid stat.");
                     return;
             }
-            await CivManager.Save();
+            await CivManager.Instance.Save();
             await ShowStats(context);
         }
 
         [Command("stats"), Aliases("show")]
         public async Task ShowStats(CommandContext context)
         {
+            CivManager.Instance.CheckForUpdates();
+
             string userHash = GetUserHash(((context.Member as SnowflakeObject ?? context.Guild as SnowflakeObject).Id));
             if (!UserExists(userHash))
             {

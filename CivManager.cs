@@ -10,7 +10,20 @@ namespace CivSim
 {
     public class CivManager
     {
-        public static CivManager Instance;
+        public static CivManager Instance
+        {
+            get
+            {
+                if (_Instance != null)
+                {
+                    return _Instance;
+                }
+                _Instance = new CivManager();
+                return _Instance;
+            }
+        }
+
+        private static CivManager _Instance;
         public CivManager()
         {
             DateTime now = DateTime.Today.AddHours(7);
@@ -23,31 +36,35 @@ namespace CivSim
 
         public DateTime NextUpdate { get; set; }
 
-        public static async Task Save()
+        public async Task Save()
         {
             string saveData = JsonSerializer.Serialize(Instance);
 
             await File.WriteAllTextAsync("data/save.json", saveData);
         }
 
-        public static async Task Load()
+        public async Task Load()
         {
             if (File.Exists("data/save.json"))
             {
                 string saveData = await File.ReadAllTextAsync("data/save.json");
-                Instance = JsonSerializer.Deserialize<CivManager>(saveData);
+                _Instance = JsonSerializer.Deserialize<CivManager>(saveData);
             }
             else
             {
-                Instance = new CivManager();
+                _Instance = new CivManager();
             }
         }
-
-        public void UpdateCivs()
+        public void CheckForUpdates()
         {
-            foreach (Civ c in Civs.Values)
+            while (NextUpdate <= DateTime.Now)
             {
-                c.Update();
+                foreach (Civ c in Civs.Values)
+                {
+                    c.Update();
+                }
+
+                NextUpdate = NextUpdate.AddDays(7);
             }
         }
     }

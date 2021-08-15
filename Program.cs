@@ -25,7 +25,7 @@ namespace CivSim
             string configString = File.ReadAllText("config.json");
             Config config = JsonSerializer.Deserialize<Config>(configString);
 
-            await CivManager.Load();
+            await CivManager.Instance.Load();
 
             DiscordClient Discord = new DiscordClient(new DiscordConfiguration()
             {
