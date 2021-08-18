@@ -38,7 +38,8 @@ namespace CivSim
         public int WeeklyPoints { get => 10 + EffectiveStats[Stat.Research] / 4; }
         [JsonIgnore]
         public int WeeklyRespecs { get => Math.Max(0, 10 + EffectiveStats[Stat.Education] / 4); }
-        // public int EventPenaltyMod { get => Healthcare / 4; }
+        [JsonIgnore]
+        public int EventPenaltyMod { get => Math.Max(0, (EffectiveStats[Stat.Healthcare] / 4) - (Effects.Count - 1)); }
         // public int MaxHealth { get => 100 + Civilian * 5; }
         // public int HealthRegen { get => 20 + Morale * 5; }
         [JsonInclude]
@@ -90,7 +91,9 @@ namespace CivSim
                 Effects[s] = 0;
             }
 
-            // Apply events
+            int tempHealthcareMod = 0;
+
+            // Apply healhtcare events
             foreach (CivEvent e in Events)
             {
                 if (e.Expiry < DateTime.Now)
@@ -98,35 +101,22 @@ namespace CivSim
                     Events.Remove(e);
                     continue;
                 }
-
-                Effects[e.Stat] += e.Effect;
+                if (e.Stat == Stat.Healthcare)
+                    tempHealthcareMod += e.Effect;
             }
+            // Update healthcare
+            EffectiveStats[Stat.Healthcare] = Stats[Stat.Healthcare] + tempHealthcareMod;
 
-            // Update effective stats
+            // Get all events with the worst case healthcare
+            foreach (CivEvent e in Events)
+            {
+                Effects[e.Stat] += Math.Min(0, e.Effect + EventPenaltyMod);
+            }
             foreach (Stat s in Enum.GetValues<Stat>())
             {
                 EffectiveStats[s] = Stats[s] + Effects[s];
             }
-        }
 
-        string AddSign(int num)
-        {
-            return (num >= 0 ? "+" + num : num.ToString());
-        }
-
-        public DiscordEmbed Format()
-        {
-            return new DiscordEmbedBuilder()
-            .WithTitle(Name)
-            .WithDescription($"Unspent points: {Points}\n Respecs available: {Respec}")
-            .WithFooter($"Nation ID: {Id}")
-            .AddField("Offence: " + Stats[Stat.Offence] + $" ({AddSign(Effects[Stat.Offence])})", "Attack modifier: " + AttackMod, true)
-            .AddField("Defence: " + Stats[Stat.Defence] + $" ({AddSign(Effects[Stat.Defence])})", "Defence modifier: " + DefenceMod, true)
-            .AddField("Research: " + Stats[Stat.Research] + $" ({AddSign(Effects[Stat.Research])})", "Weekly points: " + WeeklyPoints, true)
-            .AddField("Education: " + Stats[Stat.Education] + $" ({AddSign(Effects[Stat.Education])})", "Weekly respecs: " + WeeklyRespecs, true)
-            .AddField("Healthcare: " + Stats[Stat.Healthcare] + $" ({AddSign(Effects[Stat.Healthcare])})", "\u200b", true)
-            .AddField("Civilian: " + Stats[Stat.Civilian] + $" ({AddSign(Effects[Stat.Civilian])})", "\u200b", true)
-            .AddField("Morale: " + Stats[Stat.Morale] + $" ({AddSign(Effects[Stat.Morale])})", "\u200b", true);
         }
     }
 }

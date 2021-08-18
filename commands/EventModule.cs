@@ -15,6 +15,80 @@ namespace CivSim
 {
     public class EventModule : BaseCommandModule
     {
+        string AddSign(int num)
+        {
+            return (num >= 0 ? "+" + num : num.ToString());
+        }
+
+
+        int WeightedChoice(List<int> weights)
+        {
+            int max = weights.Sum();
+            int choice = rnd.Next(max);
+
+            for (int i = 0; i < weights.Count; i++)
+            {
+                if ((choice -= weights[i]) < 0)
+                {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        DiscordEmbed FormatEvents(Civ c)
+        {
+
+            DiscordEmbedBuilder embed = new DiscordEmbedBuilder()
+                .WithTitle("Events in " + c.Name);
+
+            var details = new Dictionary<Stat, string>();
+
+            foreach (CivEvent e in c.Events)
+            {
+                if (details.ContainsKey(e.Stat))
+                {
+                    details[e.Stat] += $"{e.FlavourText}: {AddSign(e.Effect)} ({AddSign(c.EventPenaltyMod)})\n";
+                }
+                else
+                {
+                    details[e.Stat] = $"{e.FlavourText}: {AddSign(e.Effect)} ({AddSign(c.EventPenaltyMod)})\n";
+
+                }
+                TimeSpan interval = (e.Expiry - DateTime.Now);
+
+                details[e.Stat] += $"Expires in {interval.Days}d {interval.Hours}h\n\n";
+            }
+
+            if (c.Events.Count > 1)
+            {
+                details[Stat.Healthcare] += $"Healthcare at capacity: {-4 * (c.Events.Count - 1)}";
+            }
+
+            string summary = "Summary:\n";
+
+            foreach (Stat s in Enum.GetValues<Stat>())
+            {
+                if (c.Effects[s] != 0 && s != Stat.Healthcare)
+                {
+                    summary += $"{AddSign(c.Effects[s])} to {s}\n";
+                }
+                else if (s == Stat.Healthcare)
+                {
+                    summary += $"{AddSign(c.Effects[s] - (4 * (c.Events.Count - 1)))} to {s}\n";
+                }
+
+                if (details.ContainsKey(s))
+                {
+                    embed.AddField(s.ToString(), details[s], true);
+                }
+            }
+            embed.WithDescription(summary).WithFooter("Nation ID: " + c.Id);
+
+            return embed.Build();
+        }
+
+
         Random rnd = new Random(DateTime.Now.Millisecond);
 
         List<DiscordSelectComponentOption> EventOptions = new List<DiscordSelectComponentOption>()
@@ -50,21 +124,31 @@ namespace CivSim
 
         //TODO: anon. events
         [Command("event")]
-        public async Task CreateEvent(CommandContext context, string target)
+        public async Task CreateEvent(CommandContext context, string target = "")
         {
+
             string userHash = CivManager.GetUserHash(context.User.Id);
+
             if (!CivManager.Instance.UserExists(userHash))
             {
                 await context.RespondAsync("You haven't registered yet.");
                 return;
             }
+
+            Civ userCiv = CivManager.Instance.Civs[userHash];
+            if (target == "")
+            {
+                userCiv.UpdateEvents();
+                await context.RespondAsync(FormatEvents(userCiv));
+                return;
+            }
+
             if (!CivManager.Instance.UserExists(target))
             {
                 await context.RespondAsync($"That nation doesn't exist.");
                 return;
             }
 
-            Civ userCiv = CivManager.Instance.Civs[userHash];
             Civ targetCiv = CivManager.Instance.Civs[target];
 
             var dropdown = new DiscordSelectComponent("events", "Choose...", EventOptions, false, 7, 21);
@@ -128,7 +212,14 @@ namespace CivSim
                 }
 
                 CivEvent civEvent = new CivEvent(CivEvent.ShopEvents[selected[WeightedChoice(weights)]]);
-                
+
+                // Saving throws
+                if (rnd.Next(20) + targetCiv.Stats[civEvent.Stat] / 8 >= 10)
+                {
+                    civEvent.Effect /= 2;
+                    civEvent.FlavourText += " (reduced)";
+                }
+
                 targetCiv.Events.Add(civEvent);
                 targetCiv.UpdateEvents();
 
@@ -142,19 +233,31 @@ namespace CivSim
             await componentMsg.DeleteAsync();
         }
 
-        int WeightedChoice(List<int> weights)
+        [Command("events")]
+        public async Task ListEvents(CommandContext context, string target = "")
         {
-            int max = weights.Sum();
-            int choice = rnd.Next(max);
-
-            for (int i = 0; i < weights.Count; i++)
+            string userHash = CivManager.GetUserHash(context.User.Id);
+            if (target == "")
             {
-                if ((choice -= weights[i]) < 0)
-                {
-                    return i;
-                }
+                target = userHash;
             }
-            return -1;
+
+            if (!CivManager.Instance.UserExists(target))
+            {
+                if (target == userHash)
+                {
+                    await context.RespondAsync("You haven't registered yet.");
+                }
+                else
+                {
+                    await context.RespondAsync("That nation doesn't exist.");
+                }
+                return;
+            }
+            Civ userCiv = CivManager.Instance.Civs[target];
+            userCiv.UpdateEvents();
+
+            await context.RespondAsync(FormatEvents(userCiv));
         }
     }
 }

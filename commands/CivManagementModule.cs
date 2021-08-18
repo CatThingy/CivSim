@@ -69,13 +69,33 @@ namespace CivSim
             return (int)(Math.Sign(points) * ((((Math.Abs(from + points)) / k1) + 12.5 * (k1 - 1)) - Math.Abs(from) / k2 + 12.5 * (k2 - 1)));
         }
 
+        string AddSign(int num)
+        {
+            return (num >= 0 ? "+" + num : num.ToString());
+        }
+
+
+        DiscordEmbedBuilder FormatCiv(Civ c) =>
+    new DiscordEmbedBuilder()
+                .WithTitle(c.Name)
+                .WithDescription($"Unspent points: {c.Points}\n Respecs available: {c.Respec}")
+                .WithFooter($"Nation ID: {c.Id}")
+                .AddField("Offence: " + c.Stats[Stat.Offence] + $" ({AddSign(c.Effects[Stat.Offence])})", "Attack modifier: " + c.AttackMod, true)
+                .AddField("Defence: " + c.Stats[Stat.Defence] + $" ({AddSign(c.Effects[Stat.Defence])})", "Defence modifier: " + c.DefenceMod, true)
+                .AddField("Research: " + c.Stats[Stat.Research] + $" ({AddSign(c.Effects[Stat.Research])})", "Weekly points: " + c.WeeklyPoints, true)
+                .AddField("Education: " + c.Stats[Stat.Education] + $" ({AddSign(c.Effects[Stat.Education])})", "Weekly respecs: " + c.WeeklyRespecs, true)
+                .AddField("Healthcare: " + c.Stats[Stat.Healthcare] + $" ({AddSign(c.Effects[Stat.Healthcare] - (4 * (c.Events.Count - 1)))})", "Event effect modifier: " + -c.EventPenaltyMod, true)
+                .AddField("Civilian: " + c.Stats[Stat.Civilian] + $" ({AddSign(c.Effects[Stat.Civilian])})", "\u200b", true)
+                .AddField("Morale: " + c.Stats[Stat.Morale] + $" ({AddSign(c.Effects[Stat.Morale])})", "\u200b", true);
+
+
         List<DiscordSelectComponentOption> updateNumbers(List<DiscordSelectComponentOption> options, int num)
         {
             var temp = new List<DiscordSelectComponentOption>();
             // Update the numbers
             foreach (DiscordSelectComponentOption option in options)
             {
-                var newOption = new DiscordSelectComponentOption((num > 0 ? "+" : "") + $"{num} to {option.Value}", option.Value);
+                var newOption = new DiscordSelectComponentOption($"{AddSign(num)} to {option.Value}", option.Value);
                 temp.Add(newOption);
             }
             return temp;
@@ -274,7 +294,7 @@ namespace CivSim
                     await CivManager.Instance.Save();
                     await result.Result.Interaction.CreateResponseAsync(DSharpPlus.InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder()
                     .WithContent("")
-                    .AddEmbed(newCiv.Format()));
+                    .AddEmbed(FormatCiv(newCiv)));
                     break;
                 }
                 await result.Result.Interaction.CreateResponseAsync(DSharpPlus.InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder()
@@ -349,7 +369,7 @@ namespace CivSim
         {
             CivManager.Instance.CheckForUpdates();
 
-            string userHash = CivManager.GetUserHash(((context.Member as SnowflakeObject ?? context.Guild as SnowflakeObject).Id));
+            string userHash = CivManager.GetUserHash(context.User.Id);
             if (id == "")
             {
                 id = userHash;
@@ -371,7 +391,8 @@ namespace CivSim
             Civ userCiv = CivManager.Instance.Civs[id];
             userCiv.UpdateEvents();
 
-            await context.RespondAsync(userCiv.Format());
+            await context.RespondAsync(FormatCiv(userCiv));
         }
+
     }
 }
