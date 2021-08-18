@@ -63,10 +63,6 @@ namespace CivSim
                 string saveData = await File.ReadAllTextAsync("data/save.json");
                 _Instance = JsonSerializer.Deserialize<CivManager>(saveData);
             }
-            else
-            {
-                _Instance = new CivManager();
-            }
         }
         public void CheckForUpdates()
         {

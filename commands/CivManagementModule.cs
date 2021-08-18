@@ -302,6 +302,7 @@ namespace CivSim
             }
 
             Civ userCiv = CivManager.Instance.Civs[userHash];
+            userCiv.UpdateEvents();
             if (change == 0)
             {
                 await context.RespondAsync("Congrats, you changed a stat by 0.");
@@ -323,7 +324,7 @@ namespace CivSim
 
             }
             else
-            {   
+            {
                 if (-p <= userCiv.Respec)
                 {
                     userCiv.Stats[stat] += p;
@@ -368,6 +369,7 @@ namespace CivSim
             }
 
             Civ userCiv = CivManager.Instance.Civs[id];
+            userCiv.UpdateEvents();
 
             await context.RespondAsync(userCiv.Format());
         }
