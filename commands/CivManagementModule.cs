@@ -1,5 +1,4 @@
 using System;
-using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
@@ -7,11 +6,47 @@ using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using DSharpPlus.CommandsNext.Converters;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
 
 namespace CivSim
 {
+    public class CivStatConverter : IArgumentConverter<Stat>
+    {
+        public Task<Optional<Stat>> ConvertAsync(string value, CommandContext context)
+        {
+            switch (value.ToLower())
+            {
+                case "o":
+                case "offence":
+                case "offense":
+                    return Task.FromResult(Optional.FromValue<Stat>(Stat.Offence));
+                case "d":
+                case "defence":
+                case "defense":
+                    return Task.FromResult(Optional.FromValue<Stat>(Stat.Defence));
+                case "r":
+                case "research":
+                    return Task.FromResult(Optional.FromValue<Stat>(Stat.Research));
+                case "e":
+                case "education":
+                    return Task.FromResult(Optional.FromValue<Stat>(Stat.Education));
+                case "h":
+                case "healthcare":
+                    return Task.FromResult(Optional.FromValue<Stat>(Stat.Healthcare));
+                case "c":
+                case "civilian":
+                    return Task.FromResult(Optional.FromValue<Stat>(Stat.Civilian));
+                case "m":
+                case "morale":
+                    return Task.FromResult(Optional.FromValue<Stat>(Stat.Morale));
+                default:
+                    return Task.FromResult(Optional.FromNoValue<Stat>());
+            }
+        }
+    }
+
     public class CivManagementModule : BaseCommandModule
     {
         // Levels 0-25: costs 1 point
@@ -122,29 +157,29 @@ namespace CivSim
                 switch (result.Result.Values[0])
                 {
                     case "offence":
-                        newCiv.Offence = amt;
+                        newCiv.Stats[Stat.Offence] = amt;
                         break;
 
                     case "defence":
-                        newCiv.Defence = amt;
+                        newCiv.Stats[Stat.Defence] = amt;
                         break;
 
                     case "research":
-                        newCiv.Research = amt;
+                        newCiv.Stats[Stat.Research] = amt;
                         break;
 
                     case "education":
-                        newCiv.Education = amt;
+                        newCiv.Stats[Stat.Education] = amt;
                         break;
 
                     case "healthcare":
-                        newCiv.Healthcare = amt;
+                        newCiv.Stats[Stat.Healthcare] = amt;
                         break;
                     case "civilian":
-                        newCiv.Civilian = amt;
+                        newCiv.Stats[Stat.Civilian] = amt;
                         break;
                     case "morale":
-                        newCiv.Morale = amt;
+                        newCiv.Stats[Stat.Morale] = amt;
                         break;
                 }
 
@@ -196,29 +231,29 @@ namespace CivSim
                 switch (result.Result.Values[0])
                 {
                     case "offence":
-                        newCiv.Offence = amt;
+                        newCiv.Stats[Stat.Offence] = amt;
                         break;
 
                     case "defence":
-                        newCiv.Defence = amt;
+                        newCiv.Stats[Stat.Defence] = amt;
                         break;
 
                     case "research":
-                        newCiv.Research = amt;
+                        newCiv.Stats[Stat.Research] = amt;
                         break;
 
                     case "education":
-                        newCiv.Education = amt;
+                        newCiv.Stats[Stat.Education] = amt;
                         break;
 
                     case "healthcare":
-                        newCiv.Healthcare = amt;
+                        newCiv.Stats[Stat.Healthcare] = amt;
                         break;
                     case "civilian":
-                        newCiv.Civilian = amt;
+                        newCiv.Stats[Stat.Civilian] = amt;
                         break;
                     case "morale":
-                        newCiv.Morale = amt;
+                        newCiv.Stats[Stat.Morale] = amt;
                         break;
                 }
 
@@ -252,7 +287,7 @@ namespace CivSim
         [Description("Allocates points to increase your stats.\n\nStats cost 1 point more every 25 levels.")]
         public async Task ChangeStats(CommandContext context,
             [Description("The stat to allocate points to.")]
-            string stat,
+            Stat stat,
 
             [Description("The number of levels to change the stat by.\nIf negative, uses point respecs and refunds points.")]
             int change)
@@ -273,160 +308,32 @@ namespace CivSim
                 return;
             }
 
-            int p;
-            switch (stat.ToLower())
+            int p = computePointDifference(userCiv.Stats[stat], userCiv.Stats[stat] + change);
+            if (change > 0)
             {
-                case "offence":
-                case "offense":
-                    p = computePointDifference(userCiv.Offence, userCiv.Offence + change);
-                    if (change > 0)
-                    {
-                        if (p <= userCiv.Points)
-                        {
-                            userCiv.Offence += p;
-                            userCiv.Points -= p;
-                        }
-                        else
-                        {
-                            await context.RespondAsync($"You only have enough points to increase your offence by {maxPointDifference(userCiv.Offence, userCiv.Points)} level(s).");
-                        }
+                if (p <= userCiv.Points)
+                {
+                    userCiv.Stats[stat] += p;
+                    userCiv.Points -= p;
+                }
+                else
+                {
+                    await context.RespondAsync($"You only have enough points to increase your offence by {maxPointDifference(userCiv.Stats[stat], userCiv.Stats[stat])} level(s).");
+                }
 
-                    }
-                    else
-                    {
-                        if (-p <= userCiv.Respec)
-                        {
-                            userCiv.Offence += p;
-                            userCiv.Respec += p;
-                            userCiv.Points -= p;
-                        }
-                        else
-                        {
-                            await context.RespondAsync($"You only have enough point respecs to decrease your offence by {-maxPointDifference(userCiv.Offence, -userCiv.Respec)} level(s).");
-                        }
-                    }
-                    break;
-
-                case "defence":
-                case "defense":
-                    p = computePointDifference(userCiv.Defence, userCiv.Defence + change);
-                    if (change > 0)
-                    {
-                        if (p <= userCiv.Points)
-                        {
-                            userCiv.Defence += p;
-                            userCiv.Points -= p;
-                        }
-                        else
-                        {
-                            await context.RespondAsync($"You only have enough points to increase your defence by {maxPointDifference(userCiv.Defence, userCiv.Points)} level(s).");
-                        }
-                    }
-                    else
-                    {
-                        if (-p <= userCiv.Respec)
-                        {
-                            userCiv.Defence += p;
-                            userCiv.Respec += p;
-                            userCiv.Points -= p;
-                        }
-                        else
-                        {
-                            await context.RespondAsync($"You only have enough point respecs to decrease your defence by {maxPointDifference(userCiv.Defence, userCiv.Points)} level(s).");
-                        }
-                    }
-                    break;
-
-                case "research":
-                    p = computePointDifference(userCiv.Research, userCiv.Research + change);
-                    if (change > 0)
-                    {
-                        if (p <= userCiv.Points)
-                        {
-                            userCiv.Research += p;
-                            userCiv.Points -= p;
-                        }
-                        else
-                        {
-                            await context.RespondAsync($"You only have enough points to increase your research by {maxPointDifference(userCiv.Research, userCiv.Points)} level(s).");
-                        }
-                    }
-                    else
-                    {
-                        if (-p <= userCiv.Respec)
-                        {
-                            userCiv.Research += p;
-                            userCiv.Respec += p;
-                            userCiv.Points -= p;
-                        }
-                        else
-                        {
-                            await context.RespondAsync($"You only have enough point respecs to decrease your research by {maxPointDifference(userCiv.Research, userCiv.Points)} level(s).");
-                        }
-                    }
-                    break;
-
-                case "education":
-                    p = computePointDifference(userCiv.Education, userCiv.Education + change);
-                    if (change > 0)
-                    {
-                        if (p <= userCiv.Points)
-                        {
-                            userCiv.Education += p;
-                            userCiv.Points += p;
-                        }
-                        else
-                        {
-                            await context.RespondAsync($"You only have enough points to increase your education by {maxPointDifference(userCiv.Education, userCiv.Points)} level(s).");
-                        }
-                    }
-                    else
-                    {
-                        if (-p <= userCiv.Respec)
-                        {
-                            userCiv.Education += p;
-                            userCiv.Respec += p;
-                            userCiv.Points -= p;
-                        }
-                        else
-                        {
-                            await context.RespondAsync($"You only have enough point respecs to decrease your education by {maxPointDifference(userCiv.Education, userCiv.Points)} level(s).");
-                        }
-                    }
-                    break;
-
-                case "healthcare":
-                    p = computePointDifference(userCiv.Healthcare, userCiv.Healthcare + change);
-                    if (change > 0)
-                    {
-                        if (p <= userCiv.Points)
-                        {
-                            userCiv.Healthcare += p;
-                            userCiv.Points -= p;
-                        }
-                        else
-                        {
-                            await context.RespondAsync($"You only have enough points to increase your healthcare by {maxPointDifference(userCiv.Healthcare, userCiv.Points)} level(s).");
-                        }
-                    }
-                    else
-                    {
-                        if (-p <= userCiv.Respec)
-                        {
-                            userCiv.Healthcare += p;
-                            userCiv.Respec += p;
-                            userCiv.Points -= p;
-                        }
-                        else
-                        {
-                            await context.RespondAsync($"You only have enough point respecs to decrease your healthcare by {maxPointDifference(userCiv.Healthcare, userCiv.Points)} level(s).");
-                        }
-                    }
-                    break;
-
-                default:
-                    await context.RespondAsync("That's not a valid stat.");
-                    return;
+            }
+            else
+            {   
+                if (-p <= userCiv.Respec)
+                {
+                    userCiv.Stats[stat] += p;
+                    userCiv.Respec += p;
+                    userCiv.Points -= p;
+                }
+                else
+                {
+                    await context.RespondAsync($"You only have enough point respecs to decrease your offence by {-maxPointDifference(userCiv.Stats[stat], -userCiv.Respec)} level(s).");
+                }
             }
             await CivManager.Instance.Save();
             await ShowStats(context);

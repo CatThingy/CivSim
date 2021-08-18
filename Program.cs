@@ -50,6 +50,8 @@ namespace CivSim
 
             commands.SetHelpFormatter<HelpFormatter>();
 
+            commands.RegisterConverter(new CivStatConverter());
+
             Discord.UseInteractivity(new InteractivityConfiguration
             {
                 Timeout = TimeSpan.FromSeconds(60)

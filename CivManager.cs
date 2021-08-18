@@ -10,6 +10,17 @@ using System.Security.Cryptography;
 
 namespace CivSim
 {
+    public enum Stat
+    {
+        Offence,
+        Defence,
+        Research,
+        Education,
+        Healthcare,
+        Civilian,
+        Morale
+    }
+
     public class CivManager
     {
         public static CivManager Instance
