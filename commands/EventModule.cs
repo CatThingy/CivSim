@@ -197,6 +197,12 @@ namespace CivSim
 
             if (!result.TimedOut && result.Result.Id != "cancel")
             {
+                if (pointCost > userCiv.Points)
+                {
+                    await pointsMsg.ModifyAsync($"You need {pointCost - userCiv.Points} more point(s) for that.");
+                    await componentMsg.DeleteAsync();
+                    return;
+                }
                 var weights = new List<int>();
 
                 foreach (string v in selected)
@@ -219,6 +225,8 @@ namespace CivSim
                     civEvent.Effect /= 2;
                     civEvent.FlavourText += " (reduced)";
                 }
+
+                userCiv.Points -= pointCost;
 
                 targetCiv.Events.Add(civEvent);
                 targetCiv.UpdateEvents();
