@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
+using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.CommandsNext;
@@ -472,6 +473,39 @@ namespace CivSim
 
             await CivManager.Instance.Save();
             await ShowStats(context, userHash);
+        }
+
+        [Command("wipe")]
+        [Aliases("nuke")]
+        [RequireUserPermissions(Permissions.KickMembers)]
+        public async Task WipeCiv(CommandContext context, string target)
+        {
+            if (CivManager.Instance.UserExists(target))
+            {
+                CivManager.Instance.Civs.Remove(target);
+                await CivManager.Instance.Save();
+                await context.RespondAsync("Nation deleted.");
+            }
+            else
+            {
+                await context.RespondAsync("Nation could not be found.");
+            }
+        }
+
+        [Command("delete")]
+        public async Task Delete(CommandContext context)
+        {
+            string userHash = CivManager.GetUserHash(context.User.Id);
+            if (CivManager.Instance.UserExists(userHash))
+            {
+                CivManager.Instance.Civs.Remove(userHash);
+                await CivManager.Instance.Save();
+                await context.RespondAsync("Nation deleted.");
+            }
+            else
+            {
+                await context.RespondAsync("You don't have a nation to delete.");
+            }
         }
     }
 }
