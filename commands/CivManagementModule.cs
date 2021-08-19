@@ -70,10 +70,9 @@ namespace CivSim
             return (int)(Math.Sign(points) * ((((Math.Abs(from + points)) / k1) + 12.5 * (k1 - 1)) - Math.Abs(from) / k2 + 12.5 * (k2 - 1)));
         }
 
-        string AddSign(int num)
-        {
-            return (num >= 0 ? "+" + num : num.ToString());
-        }
+        string AddSign(int num) =>
+            num >= 0 ? "+" + num : num.ToString();
+
 
         DiscordEmbed FormatCiv(Civ c)
         {
@@ -375,7 +374,7 @@ namespace CivSim
         [Aliases("show")]
         [Description("Shows stats of a nation.")]
         public async Task ShowStats(CommandContext context,
-            [Description("The ID of the nation to show.\nIf no ID is specified, shows stats of your nation.")]
+            [Description("The ID of the nation to show.\nDefaults to your nation.")]
             string id = "")
         {
             CivManager.Instance.CheckForUpdates();

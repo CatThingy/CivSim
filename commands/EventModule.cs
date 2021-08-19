@@ -126,7 +126,10 @@ namespace CivSim
 
         //TODO: anon. events
         [Command("event")]
-        public async Task CreateEvent(CommandContext context, string target = "")
+        [Description("Instigate a negative event against a nation, randomly chosen from a specified list. Removing options from the list costs more points.")]
+        public async Task CreateEvent(CommandContext context,
+            [Description("The ID of the nation to target.\nCalling with no ID given lists events affecting your nation.")]
+            string target = "")
         {
 
             string userHash = CivManager.GetUserHash(context.User.Id);
@@ -244,7 +247,10 @@ namespace CivSim
         }
 
         [Command("events")]
-        public async Task ListEvents(CommandContext context, string target = "")
+        [Description("Lists all events a nation is experiencing.")]
+        public async Task ListEvents(CommandContext context,
+            [Description("The ID of the nation to list events of.\nDefaults to your nation.")]
+            string target = "")
         {
             string userHash = CivManager.GetUserHash(context.User.Id);
             if (target == "")
