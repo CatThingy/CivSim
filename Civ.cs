@@ -9,11 +9,14 @@ namespace CivSim
 {
     public class Civ
     {
-        public string Name { get; }
+        public string Name { get; set; }
         public string Id { get; }
 
         public int Points { get; set; }
         public int Respec { get; set; }
+
+        public string Flag { get; set; }
+        public string Colour { get; set; }
 
         // Base stats
 

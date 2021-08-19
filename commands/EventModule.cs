@@ -40,7 +40,9 @@ namespace CivSim
         {
 
             DiscordEmbedBuilder embed = new DiscordEmbedBuilder()
-                .WithTitle("Events in " + c.Name);
+                .WithTitle("Events in " + c.Name)
+                .WithColor(new DiscordColor(c.Colour))
+                .WithThumbnail(c.Flag);
 
             var details = new Dictionary<Stat, string>();
 

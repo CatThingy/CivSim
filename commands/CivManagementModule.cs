@@ -74,20 +74,30 @@ namespace CivSim
             return (num >= 0 ? "+" + num : num.ToString());
         }
 
+        DiscordEmbed FormatCiv(Civ c)
+        {
+            var e = new DiscordEmbedBuilder()
+            .WithTitle(c.Name)
+            .WithDescription($"Unspent points: {c.Points}\n Respecs available: {c.Respec}\n\n\u200b")
+            .WithFooter($"Nation ID: {c.Id}")
+            .WithThumbnail(c.Flag)
+            .AddField("Offence: " + c.Stats[Stat.Offence] + $" ({AddSign(c.Effects[Stat.Offence])})", "Attack modifier: " + c.AttackMod, true)
+            .AddField("Defence: " + c.Stats[Stat.Defence] + $" ({AddSign(c.Effects[Stat.Defence])})", "Defence modifier: " + c.DefenceMod, true)
+            .AddField("\u200b", "\u200b")
+            .AddField("Research: " + c.Stats[Stat.Research] + $" ({AddSign(c.Effects[Stat.Research])})", "Weekly points: " + c.WeeklyPoints, true)
+            .AddField("Education: " + c.Stats[Stat.Education] + $" ({AddSign(c.Effects[Stat.Education])})", "Weekly respecs: " + c.WeeklyRespecs, true)
+            .AddField("\u200b", "\u200b")
+            .AddField("Healthcare: " + c.Stats[Stat.Healthcare] + $" ({AddSign(c.Effects[Stat.Healthcare] - (4 * (c.Events.Count - 1)))})", "Event effect modifier: " + -c.EventPenaltyMod, true)
+            .AddField("Civilian: " + c.Stats[Stat.Civilian] + $" ({AddSign(c.Effects[Stat.Civilian])})", "\u200b", true)
+            .AddField("\u200b", "\u200b")
+            .AddField("Morale: " + c.Stats[Stat.Morale] + $" ({AddSign(c.Effects[Stat.Morale])})", "\u200b", true);
 
-        DiscordEmbedBuilder FormatCiv(Civ c) =>
-    new DiscordEmbedBuilder()
-                .WithTitle(c.Name)
-                .WithDescription($"Unspent points: {c.Points}\n Respecs available: {c.Respec}")
-                .WithFooter($"Nation ID: {c.Id}")
-                .AddField("Offence: " + c.Stats[Stat.Offence] + $" ({AddSign(c.Effects[Stat.Offence])})", "Attack modifier: " + c.AttackMod, true)
-                .AddField("Defence: " + c.Stats[Stat.Defence] + $" ({AddSign(c.Effects[Stat.Defence])})", "Defence modifier: " + c.DefenceMod, true)
-                .AddField("Research: " + c.Stats[Stat.Research] + $" ({AddSign(c.Effects[Stat.Research])})", "Weekly points: " + c.WeeklyPoints, true)
-                .AddField("Education: " + c.Stats[Stat.Education] + $" ({AddSign(c.Effects[Stat.Education])})", "Weekly respecs: " + c.WeeklyRespecs, true)
-                .AddField("Healthcare: " + c.Stats[Stat.Healthcare] + $" ({AddSign(c.Effects[Stat.Healthcare] - (4 * (c.Events.Count - 1)))})", "Event effect modifier: " + -c.EventPenaltyMod, true)
-                .AddField("Civilian: " + c.Stats[Stat.Civilian] + $" ({AddSign(c.Effects[Stat.Civilian])})", "\u200b", true)
-                .AddField("Morale: " + c.Stats[Stat.Morale] + $" ({AddSign(c.Effects[Stat.Morale])})", "\u200b", true);
-
+            if (c.Colour != null)
+            {
+                e.WithColor(new DiscordColor(c.Colour));
+            }
+            return e.Build();
+        }
 
         List<DiscordSelectComponentOption> updateNumbers(List<DiscordSelectComponentOption> options, int num)
         {
@@ -314,7 +324,7 @@ namespace CivSim
         {
             CivManager.Instance.CheckForUpdates();
 
-            string userHash = CivManager.GetUserHash(((context.Member as SnowflakeObject ?? context.Guild as SnowflakeObject).Id));
+            string userHash = CivManager.GetUserHash(context.User.Id);
             if (!CivManager.Instance.UserExists(userHash))
             {
                 await context.RespondAsync("You haven't registered yet.");
@@ -394,5 +404,74 @@ namespace CivSim
             await context.RespondAsync(FormatCiv(userCiv));
         }
 
+        [Command("flag")]
+        public async Task SetFlag(CommandContext context)
+        {
+            string userHash = CivManager.GetUserHash(context.User.Id);
+            if (!CivManager.Instance.UserExists(userHash))
+            {
+                await context.RespondAsync("You haven't registered yet.");
+                return;
+            }
+
+            Civ userCiv = CivManager.Instance.Civs[userHash];
+
+
+            if (context.Message.Attachments.Count == 0)
+            {
+                await context.RespondAsync("Attach an image to set it as your flag.");
+                return;
+            }
+
+            DiscordAttachment flag = context.Message.Attachments[0];
+
+            if (flag.Width == null)
+            {
+                await context.RespondAsync("You can only set images as flags.");
+                return;
+            }
+
+            userCiv.Flag = flag.Url;
+
+            await CivManager.Instance.Save();
+            await ShowStats(context, userHash);
+        }
+
+        [Command("name")]
+        public async Task SetName(CommandContext context, params string[] name)
+        {
+            string userHash = CivManager.GetUserHash(context.User.Id);
+            if (!CivManager.Instance.UserExists(userHash))
+            {
+                await context.RespondAsync("You haven't registered yet.");
+                return;
+            }
+
+            Civ userCiv = CivManager.Instance.Civs[userHash];
+
+            userCiv.Name = String.Join(" ", name);
+
+            await CivManager.Instance.Save();
+            await ShowStats(context, userHash);
+        }
+
+        [Command("colour")]
+        [Aliases("color")]
+        public async Task SetColour(CommandContext context, DiscordColor colour)
+        {
+            string userHash = CivManager.GetUserHash(context.User.Id);
+            if (!CivManager.Instance.UserExists(userHash))
+            {
+                await context.RespondAsync("You haven't registered yet.");
+                return;
+            }
+
+            Civ userCiv = CivManager.Instance.Civs[userHash];
+
+            userCiv.Colour = colour.ToString();
+
+            await CivManager.Instance.Save();
+            await ShowStats(context, userHash);
+        }
     }
 }
