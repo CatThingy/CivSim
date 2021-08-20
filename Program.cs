@@ -29,7 +29,7 @@ namespace CivSim
             string configString = File.ReadAllText("config.json");
             Config config = JsonSerializer.Deserialize<Config>(configString);
 
-            await CivManager.Instance.Load();
+            await SimManager.Instance.Load();
 
             var Discord = new DiscordClient(new DiscordConfiguration()
             {

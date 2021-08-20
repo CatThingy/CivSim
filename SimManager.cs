@@ -21,9 +21,9 @@ namespace CivSim
         Morale
     }
 
-    public class CivManager
+    public class SimManager
     {
-        public static CivManager Instance
+        public static SimManager Instance
         {
             get
             {
@@ -31,23 +31,24 @@ namespace CivSim
                 {
                     return _Instance;
                 }
-                _Instance = new CivManager();
+                _Instance = new SimManager();
                 return _Instance;
             }
         }
 
-        private static CivManager _Instance;
-        public CivManager()
-        {
-            DateTime now = DateTime.Today.AddHours(7);
-            int daysToUpdate = (7 - (int)now.DayOfWeek) % 7;
-            NextUpdate = now.AddDays(daysToUpdate > 0 ? daysToUpdate : 7);
-        }
+        private static SimManager _Instance;
 
         [JsonInclude]
         public Dictionary<string, Civ> Civs = new Dictionary<string, Civ>();
 
         public DateTime NextUpdate { get; set; }
+
+        public SimManager()
+        {
+            DateTime now = DateTime.Today.AddHours(7);
+            int daysToUpdate = (7 - (int)now.DayOfWeek) % 7;
+            NextUpdate = now.AddDays(daysToUpdate > 0 ? daysToUpdate : 7);
+        }
 
         public async Task Save()
         {
@@ -61,7 +62,7 @@ namespace CivSim
             if (File.Exists("data/save.json"))
             {
                 string saveData = await File.ReadAllTextAsync("data/save.json");
-                _Instance = JsonSerializer.Deserialize<CivManager>(saveData);
+                _Instance = JsonSerializer.Deserialize<SimManager>(saveData);
             }
         }
         public void CheckForUpdates()
@@ -90,7 +91,7 @@ namespace CivSim
 
         public bool UserExists(string userHash)
         {
-            return CivManager.Instance.Civs.ContainsKey(userHash);
+            return SimManager.Instance.Civs.ContainsKey(userHash);
         }
     }
 }

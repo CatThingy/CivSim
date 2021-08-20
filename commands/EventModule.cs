@@ -132,15 +132,15 @@ namespace CivSim
             string target = "")
         {
 
-            string userHash = CivManager.GetUserHash(context.User.Id);
+            string userHash = SimManager.GetUserHash(context.User.Id);
 
-            if (!CivManager.Instance.UserExists(userHash))
+            if (!SimManager.Instance.UserExists(userHash))
             {
                 await context.RespondAsync("You haven't registered yet.");
                 return;
             }
 
-            Civ userCiv = CivManager.Instance.Civs[userHash];
+            Civ userCiv = SimManager.Instance.Civs[userHash];
             if (target == "")
             {
                 userCiv.UpdateEvents();
@@ -148,13 +148,13 @@ namespace CivSim
                 return;
             }
 
-            if (!CivManager.Instance.UserExists(target))
+            if (!SimManager.Instance.UserExists(target))
             {
                 await context.RespondAsync($"That nation doesn't exist.");
                 return;
             }
 
-            Civ targetCiv = CivManager.Instance.Civs[target];
+            Civ targetCiv = SimManager.Instance.Civs[target];
 
             var dropdown = new DiscordSelectComponent("events", "Choose...", EventOptions, false, 7, 21);
             var cancel = new DiscordButtonComponent(ButtonStyle.Danger, "cancel", "Cancel");
@@ -236,7 +236,7 @@ namespace CivSim
                 targetCiv.Events.Add(civEvent);
                 targetCiv.UpdateEvents();
 
-                await CivManager.Instance.Save();
+                await SimManager.Instance.Save();
                 await pointsMsg.ModifyAsync(civEvent.FlavourText);
             }
 
@@ -252,13 +252,13 @@ namespace CivSim
             [Description("The ID of the nation to list events of.\nDefaults to your nation.")]
             string target = "")
         {
-            string userHash = CivManager.GetUserHash(context.User.Id);
+            string userHash = SimManager.GetUserHash(context.User.Id);
             if (target == "")
             {
                 target = userHash;
             }
 
-            if (!CivManager.Instance.UserExists(target))
+            if (!SimManager.Instance.UserExists(target))
             {
                 if (target == userHash)
                 {
@@ -270,7 +270,7 @@ namespace CivSim
                 }
                 return;
             }
-            Civ userCiv = CivManager.Instance.Civs[target];
+            Civ userCiv = SimManager.Instance.Civs[target];
             userCiv.UpdateEvents();
 
             await context.RespondAsync(FormatEvents(userCiv));

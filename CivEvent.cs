@@ -28,7 +28,7 @@ namespace CivSim
 
             { "evt_defence1", new CivEvent(){ Stat = Stat.Defence, Effect = -1, FlavourText = "Whistleblowing" } },
             { "evt_defence2", new CivEvent(){ Stat = Stat.Defence, Effect = -2, FlavourText = "Foreign espionage" } },
-            { "evt_defence3", new CivEvent(){ Stat = Stat.Defence, Effect = -4, FlavourText ="Cyberwarfare" } },
+            { "evt_defence3", new CivEvent(){ Stat = Stat.Defence, Effect = -4, FlavourText = "Cyberwarfare" } },
 
             { "evt_research1", new CivEvent(){ Stat = Stat.Research, Effect = -1, FlavourText = "Lack of public interest" } },
             { "evt_research2", new CivEvent(){ Stat = Stat.Research, Effect = -2, FlavourText = "Corporate greed" } },
@@ -51,4 +51,4 @@ namespace CivSim
             { "evt_morale3", new CivEvent(){ Stat = Stat.Morale, Effect = -4, FlavourText = "iris please add this" } },
         };
     }
-}
+}   

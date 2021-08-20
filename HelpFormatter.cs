@@ -15,8 +15,8 @@ namespace CivSim
 
         public override CommandHelpMessage Build()
         {
-            string userHash = CivManager.GetUserHash(ctx.User.Id);
-            if (!CivManager.Instance.UserExists(userHash))
+            string userHash = SimManager.GetUserHash(ctx.User.Id);
+            if (!SimManager.Instance.UserExists(userHash))
             {
                 EmbedBuilder.ClearFields()
                 .WithTitle("Getting Started")

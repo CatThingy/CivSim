@@ -117,8 +117,8 @@ namespace CivSim
         [Description("Creates your nation, allowing you to use the rest of the bot.")]
         public async Task CreateCiv(CommandContext context, [Description("The name of your nation.")] params string[] name)
         {
-            string userHash = CivManager.GetUserHash(((context.Member as SnowflakeObject ?? context.Guild as SnowflakeObject).Id));
-            if (CivManager.Instance.UserExists(userHash))
+            string userHash = SimManager.GetUserHash(((context.Member as SnowflakeObject ?? context.Guild as SnowflakeObject).Id));
+            if (SimManager.Instance.UserExists(userHash))
             {
                 await context.RespondAsync("You've already registered.");
                 return;
@@ -299,9 +299,9 @@ namespace CivSim
                 // Final iteration, save everything
                 if (i == 2)
                 {
-                    CivManager.Instance.Civs.Add(userHash, newCiv);
+                    SimManager.Instance.Civs.Add(userHash, newCiv);
 
-                    await CivManager.Instance.Save();
+                    await SimManager.Instance.Save();
                     await result.Result.Interaction.CreateResponseAsync(DSharpPlus.InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder()
                     .WithContent("")
                     .AddEmbed(FormatCiv(newCiv)));
@@ -322,16 +322,16 @@ namespace CivSim
             [Description("The number of levels to change the stat by.\nIf negative, uses point respecs and refunds points.")]
             int change)
         {
-            CivManager.Instance.CheckForUpdates();
+            SimManager.Instance.CheckForUpdates();
 
-            string userHash = CivManager.GetUserHash(context.User.Id);
-            if (!CivManager.Instance.UserExists(userHash))
+            string userHash = SimManager.GetUserHash(context.User.Id);
+            if (!SimManager.Instance.UserExists(userHash))
             {
                 await context.RespondAsync("You haven't registered yet.");
                 return;
             }
 
-            Civ userCiv = CivManager.Instance.Civs[userHash];
+            Civ userCiv = SimManager.Instance.Civs[userHash];
             userCiv.UpdateEvents();
             if (change == 0)
             {
@@ -366,7 +366,7 @@ namespace CivSim
                     await context.RespondAsync($"You only have enough point respecs to decrease your offence by {-maxPointDifference(userCiv.Stats[stat], -userCiv.Respec)} level(s).");
                 }
             }
-            await CivManager.Instance.Save();
+            await SimManager.Instance.Save();
             await ShowStats(context);
         }
 
@@ -377,15 +377,15 @@ namespace CivSim
             [Description("The ID of the nation to show.\nDefaults to your nation.")]
             string id = "")
         {
-            CivManager.Instance.CheckForUpdates();
+            SimManager.Instance.CheckForUpdates();
 
-            string userHash = CivManager.GetUserHash(context.User.Id);
+            string userHash = SimManager.GetUserHash(context.User.Id);
             if (id == "")
             {
                 id = userHash;
             }
 
-            if (!CivManager.Instance.UserExists(id))
+            if (!SimManager.Instance.UserExists(id))
             {
                 if (id == userHash)
                 {
@@ -398,7 +398,7 @@ namespace CivSim
                 return;
             }
 
-            Civ userCiv = CivManager.Instance.Civs[id];
+            Civ userCiv = SimManager.Instance.Civs[id];
             userCiv.UpdateEvents();
 
             await context.RespondAsync(FormatCiv(userCiv));
@@ -407,14 +407,14 @@ namespace CivSim
         [Command("flag")]
         public async Task SetFlag(CommandContext context)
         {
-            string userHash = CivManager.GetUserHash(context.User.Id);
-            if (!CivManager.Instance.UserExists(userHash))
+            string userHash = SimManager.GetUserHash(context.User.Id);
+            if (!SimManager.Instance.UserExists(userHash))
             {
                 await context.RespondAsync("You haven't registered yet.");
                 return;
             }
 
-            Civ userCiv = CivManager.Instance.Civs[userHash];
+            Civ userCiv = SimManager.Instance.Civs[userHash];
 
 
             if (context.Message.Attachments.Count == 0)
@@ -433,25 +433,25 @@ namespace CivSim
 
             userCiv.Flag = flag.Url;
 
-            await CivManager.Instance.Save();
+            await SimManager.Instance.Save();
             await ShowStats(context, userHash);
         }
 
         [Command("name")]
         public async Task SetName(CommandContext context, params string[] name)
         {
-            string userHash = CivManager.GetUserHash(context.User.Id);
-            if (!CivManager.Instance.UserExists(userHash))
+            string userHash = SimManager.GetUserHash(context.User.Id);
+            if (!SimManager.Instance.UserExists(userHash))
             {
                 await context.RespondAsync("You haven't registered yet.");
                 return;
             }
 
-            Civ userCiv = CivManager.Instance.Civs[userHash];
+            Civ userCiv = SimManager.Instance.Civs[userHash];
 
             userCiv.Name = String.Join(" ", name);
 
-            await CivManager.Instance.Save();
+            await SimManager.Instance.Save();
             await ShowStats(context, userHash);
         }
 
@@ -459,18 +459,18 @@ namespace CivSim
         [Aliases("color")]
         public async Task SetColour(CommandContext context, DiscordColor colour)
         {
-            string userHash = CivManager.GetUserHash(context.User.Id);
-            if (!CivManager.Instance.UserExists(userHash))
+            string userHash = SimManager.GetUserHash(context.User.Id);
+            if (!SimManager.Instance.UserExists(userHash))
             {
                 await context.RespondAsync("You haven't registered yet.");
                 return;
             }
 
-            Civ userCiv = CivManager.Instance.Civs[userHash];
+            Civ userCiv = SimManager.Instance.Civs[userHash];
 
             userCiv.Colour = colour.ToString();
 
-            await CivManager.Instance.Save();
+            await SimManager.Instance.Save();
             await ShowStats(context, userHash);
         }
 
@@ -479,10 +479,10 @@ namespace CivSim
         [RequireUserPermissions(Permissions.KickMembers)]
         public async Task WipeCiv(CommandContext context, string target)
         {
-            if (CivManager.Instance.UserExists(target))
+            if (SimManager.Instance.UserExists(target))
             {
-                CivManager.Instance.Civs.Remove(target);
-                await CivManager.Instance.Save();
+                SimManager.Instance.Civs.Remove(target);
+                await SimManager.Instance.Save();
                 await context.RespondAsync("Nation deleted.");
             }
             else
@@ -494,11 +494,11 @@ namespace CivSim
         [Command("delete")]
         public async Task Delete(CommandContext context)
         {
-            string userHash = CivManager.GetUserHash(context.User.Id);
-            if (CivManager.Instance.UserExists(userHash))
+            string userHash = SimManager.GetUserHash(context.User.Id);
+            if (SimManager.Instance.UserExists(userHash))
             {
-                CivManager.Instance.Civs.Remove(userHash);
-                await CivManager.Instance.Save();
+                SimManager.Instance.Civs.Remove(userHash);
+                await SimManager.Instance.Save();
                 await context.RespondAsync("Nation deleted.");
             }
             else
