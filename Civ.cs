@@ -2,9 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-using DSharpPlus.Entities;
-
-
 namespace CivSim
 {
     public class Civ
@@ -14,6 +11,16 @@ namespace CivSim
 
         public int Points { get; set; }
         public int Respec { get; set; }
+        public int Health
+        {
+            get => _Health;
+
+            set
+            {
+                _Health = Math.Max(Math.Min(value, MaxHealth), 0);
+            }
+        }
+        private int _Health;
 
         public string Flag { get; set; }
         public string Colour { get; set; }
@@ -43,8 +50,10 @@ namespace CivSim
         public int WeeklyRespecs { get => Math.Max(0, 10 + EffectiveStats[Stat.Education] / 4); }
         [JsonIgnore]
         public int EventPenaltyMod { get => Math.Max(0, (EffectiveStats[Stat.Healthcare] / 4) - (Effects.Count - 1)); }
-        // public int MaxHealth { get => 100 + Civilian * 5; }
-        // public int HealthRegen { get => 20 + Morale * 5; }
+        [JsonIgnore]
+        public int MaxHealth { get => 100 + EffectiveStats[Stat.Civilian] * 5; }
+        [JsonIgnore]
+        public int HealthRegen { get => 20 + EffectiveStats[Stat.Civilian] * 5; }
         [JsonInclude]
         public List<CivEvent> Events = new List<CivEvent>();
 
@@ -119,7 +128,6 @@ namespace CivSim
             {
                 EffectiveStats[s] = Stats[s] + Effects[s];
             }
-
         }
     }
 }

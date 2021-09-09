@@ -40,6 +40,8 @@ namespace CivSim
 
         [JsonInclude]
         public Dictionary<string, Civ> Civs = new Dictionary<string, Civ>();
+        [JsonInclude]
+        public Dictionary<string, War> Wars = new Dictionary<string, War>();
 
         public DateTime NextUpdate { get; set; }
 

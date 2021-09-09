@@ -9,6 +9,7 @@ namespace CivSim
         public int Effect { get; set; }
         public string FlavourText { get; set; }
         public DateTime Expiry { get; set; }
+        public bool IsWar { get; set; } = false;
 
         // Makes JSON deserializer happy
         public CivEvent() { }
@@ -51,4 +52,4 @@ namespace CivSim
             { "evt_morale3", new CivEvent(){ Stat = Stat.Morale, Effect = -4, FlavourText = "iris please add this" } },
         };
     }
-}   
+}
